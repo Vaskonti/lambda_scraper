@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Subscribe to Bulletins</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f9f9f9;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+
+        .container {
+            background-color: #fff;
+            padding: 20px 40px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            width: 300px;
+            text-align: center;
+        }
+
+        h1 {
+            font-size: 24px;
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: bold;
+        }
+
+        input[type="email"],
+        input[type="checkbox"] {
+            margin-bottom: 10px;
+            width: 100%;
+        }
+
+        input[type="email"] {
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+
+        input[type="submit"] {
+            background-color: #28a745;
+            color: #fff;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+
+        input[type="submit"]:hover {
+            background-color: #218838;
+        }
+
+        .bulletins label {
+            font-weight: normal;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h1>Subscribe to Bulletins</h1>
+    <form id="subscribeForm">
+        <label for="email">Email:</label>
+        <input type="email" id="email" name="email" required><br>
+
+        <label for="bulletins">Select Bulletins:</label>
+        <div class="bulletins" id="bulletins">
+            <label for="time2play">Time2Play Daily deals</label>
+            <input type="checkbox" id="time2play"/>
+        </div>
+
+        <input type="submit" value="Subscribe">
+    </form>
+</div>
+<script>
+    document.getElementById('subscribeForm').addEventListener('submit', async function (event) {
+        event.preventDefault(); // Prevent the default form submission
+
+        // Get form data
+        const formData = new FormData(event.target);
+        const email = formData.get('email');
+
+        const data = {
+            email: email,
+        };
+        console.log(data);
+
+        // Replace 'API_ENDPOINT' with your actual API endpoint URL
+        const url = "https://tu0n4l1xzl.execute-api.us-east-1.amazonaws.com/prod/";
+
+        // Make a POST request using fetch or Axios
+        // Handle errors
+        try {
+            const response = await fetch(url, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                },
+                body: JSON.stringify(data)
+            });
+
+            if (!response.ok) {
+                alert(response.status);
+            }
+
+            const responseData = await response.json();
+            alert("Successfully subscribed to Time2Play daily promotions");
+        } catch (error) {
+            console.error('Error calling lambda', error);
+        }
+
+    });
+</script>
+
+</body>
+</html>

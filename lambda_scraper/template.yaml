@@ -1,0 +1,111 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: >
+  my-lambda-project
+
+Globals:
+  Function:
+    Timeout: 3
+    MemorySize: 128
+
+Resources:
+  LambdaExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: LambdaPolicy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - logs:CreateLogGroup
+                  - logs:CreateLogStream
+                  - logs:PutLogEvents
+                Resource: arn:aws:logs:*:*:*
+              - Effect: Allow
+                Action:
+                  - ses:VerifyEmailIdentity
+                  - lambda:UpdateFunctionConfiguration
+                  - s3:ListBucket
+                  - s3:GetObject
+                  - s3:PutObject
+                  - s3:DeleteObject
+                  - s3:PutObjectAcl
+                  - s3:PutBucketAcl
+                  - s3:PutBucketPolicy
+                  - tag:GetResources
+                  - tag:TagResources
+                  - tag:UntagResources
+                Resource: "*"
+
+  EmailValidationApi:
+    Type: AWS::Serverless::Api
+    Properties:
+      Name: EmailValidationApi
+      StageName: Prod
+      Cors:
+        AllowMethods: "'POST,OPTIONS'"
+        AllowHeaders: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
+        AllowOrigin: "'*'"
+
+  EmailValidation:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: email_validation.handler.handler
+      Runtime: python3.11
+      Events:
+        Api:
+          Type: Api
+          Properties:
+            RestApiId: !Ref EmailValidationApi
+            Path: /validate_email
+            Method: post
+
+  Scraper:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: scraper.handler.handler
+      Runtime: python3.11
+      Environment:
+        Variables:
+          RECEIVERS: ""
+          EMAIL_SENDER: "lambda@vaskonti.site"
+          EMAIL_SENDER_ARN: "arn:aws:ses:us-east-1:262736261154:identity/vaskonti.site"
+      Events:
+        CloudWatchEvent:
+          Type: Schedule
+          Properties:
+            Schedule: cron(0 12 * * ? *)
+
+  HostingBucket:
+      Type: AWS::S3::Bucket
+      Properties:
+        BucketName: my-lambda-project-hosting
+        WebsiteConfiguration:
+          IndexDocument: index.html
+          ErrorDocument: error.html
+        PublicAccessBlockConfiguration:
+            BlockPublicAcls: false
+            BlockPublicPolicy: false
+            IgnorePublicAcls: false
+            RestrictPublicBuckets: false
+
+
+Outputs:
+  EmailValidation:
+    Description: "ARN of Lambda Function Two"
+    Value: !GetAtt EmailValidation.Arn
+  Scraper:
+    Description: "ARN of Lambda Function Three"
+    Value: !GetAtt Scraper.Arn
+  HostingBucket:
+    Description: "S3 Bucket for hosting"
+    Value: !Ref HostingBucket
